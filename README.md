@@ -27,7 +27,31 @@ Terraform workflow: terraform init, terraform apply -auto-approve, terraform des
 -- Load zones table from CSV
 \copy zones("LocationID","Borough","Zone","service_zone") FROM '/taxi_zone_lookup.csv' WITH (FORMAT csv, HEADER true);
 
--- SQL query for Question 5
+-- SQL query for Question 3: Counting short trips (trip_distance <= 1 mile)
+-- This query counts how many trips in November 2025 were shorter than or equal to 1 mile.
+SELECT COUNT(*)
+FROM green_tripdata
+WHERE
+  lpep_pickup_datetime >= '2025-11-01'
+  AND lpep_pickup_datetime < '2025-12-01'
+  AND trip_distance <= 1;
+
+-- SQL query for Question 4: Longest trip for each day (trip_distance < 100 miles)
+-- This query finds the day with the single longest trip in November 2025, ignoring trips over 100 miles to remove errors.
+SELECT
+  DATE(lpep_pickup_datetime) AS pickup_day,
+  MAX(trip_distance) AS max_trip_distance
+FROM green_taxi
+WHERE
+  lpep_pickup_datetime >= '2025-11-01'
+  AND lpep_pickup_datetime < '2025-12-01'
+  AND trip_distance < 100
+GROUP BY pickup_day
+ORDER BY max_trip_distance DESC
+LIMIT 1;
+
+-- SQL query for Question 5: Biggest pickup zone (total_amount)
+-- This query finds which pickup zone in November 18, 2025 generated the highest total amount of trips.
 SELECT
   z."Zone" AS pickup_zone,
   SUM(g.total_amount) AS total_amount_sum
@@ -39,7 +63,8 @@ GROUP BY pickup_zone
 ORDER BY total_amount_sum DESC
 LIMIT 1;
 
--- SQL query for Question 6
+-- SQL query for Question 6: Largest tip from East Harlem North
+-- This query finds which dropoff zone received the highest total tip from passengers picked up in 'East Harlem North' in November 2025.
 SELECT
   z."Zone" AS dropoff_zone,
   SUM(g.tip_amount) AS total_tip
