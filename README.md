@@ -1,84 +1,96 @@
-# docker-workshop
-# Module 1 Homework: Docker & SQL
+# Module 1 Homework – Docker & SQL  
+Data Engineering Zoomcamp
 
-## Question 1
-Pip version in the python:3.13 Docker image: 25.3
+This repository contains my solutions for **Module 1 (Docker & SQL)** of the Data Engineering Zoomcamp.  
+The focus of this module is understanding Docker basics, Docker Compose networking, and querying data loaded into PostgreSQL.
 
-## Question 2
-PgAdmin host and port to connect to PostgreSQL: db:5432
+---
 
-## Question 3
-Number of trips with trip_distance <= 1 mile: 8,007
+## Question 1 – Understanding Docker Images
 
-## Question 4
-Pickup day with the longest trip distance: 2025-11-20
+**Question:**  
+What is the version of `pip` available in the `python:3.13` Docker image?
 
-## Question 5
-Pickup zone with the largest total_amount on 2025-11-18: East Harlem North
+**Answer:**  
+`pip 25.3`
 
-## Question 6
-Dropoff zone with the largest tip for East Harlem North pickup: Upper East Side North
+This was verified by running the container with a bash entrypoint and checking the pip version inside the container.
 
-## Question 7
-Terraform workflow: terraform init, terraform apply -auto-approve, terraform destroy
+---
 
-## SQL & Terminal Commands Used
-```sql
--- Load zones table from CSV
-\copy zones("LocationID","Borough","Zone","service_zone") FROM '/taxi_zone_lookup.csv' WITH (FORMAT csv, HEADER true);
+## Question 2 – Docker Networking & Docker Compose
 
--- SQL query for Question 3: Counting short trips (trip_distance <= 1 mile)
--- This query counts how many trips in November 2025 were shorter than or equal to 1 mile.
-SELECT COUNT(*)
-FROM green_tripdata
-WHERE
-  lpep_pickup_datetime >= '2025-11-01'
-  AND lpep_pickup_datetime < '2025-12-01'
-  AND trip_distance <= 1;
+**Question:**  
+What hostname and port should pgAdmin use to connect to PostgreSQL when both services are defined in the same `docker-compose.yaml`?
 
--- SQL query for Question 4: Longest trip for each day (trip_distance < 100 miles)
--- This query finds the day with the single longest trip in November 2025, ignoring trips over 100 miles to remove errors.
-SELECT
-  DATE(lpep_pickup_datetime) AS pickup_day,
-  MAX(trip_distance) AS max_trip_distance
-FROM green_taxi
-WHERE
-  lpep_pickup_datetime >= '2025-11-01'
-  AND lpep_pickup_datetime < '2025-12-01'
-  AND trip_distance < 100
-GROUP BY pickup_day
-ORDER BY max_trip_distance DESC
-LIMIT 1;
+**Answer:**  
+`db:5432`
 
--- SQL query for Question 5: Biggest pickup zone (total_amount)
--- This query finds which pickup zone in November 18, 2025 generated the highest total amount of trips.
-SELECT
-  z."Zone" AS pickup_zone,
-  SUM(g.total_amount) AS total_amount_sum
-FROM green_taxi g
-JOIN zones z
-  ON g."PULocationID" = z."LocationID"
-WHERE DATE(g.lpep_pickup_datetime) = '2025-11-18'
-GROUP BY pickup_zone
-ORDER BY total_amount_sum DESC
-LIMIT 1;
+Since both services run in the same Docker Compose network, pgAdmin connects to PostgreSQL using:
+- the **service name** (`db`) as hostname
+- the **internal container port** (`5432`)
 
--- SQL query for Question 6: Largest tip from East Harlem North
--- This query finds which dropoff zone received the highest total tip from passengers picked up in 'East Harlem North' in November 2025.
-SELECT
-  z."Zone" AS dropoff_zone,
-  SUM(g.tip_amount) AS total_tip
-FROM green_taxi g
-JOIN zones z
-  ON g."DOLocationID" = z."LocationID"
-WHERE z."Zone" IS NOT NULL
-  AND DATE(g.lpep_pickup_datetime) BETWEEN '2025-11-01' AND '2025-12-01'
-  AND g."PULocationID" = (
-    SELECT "LocationID" 
-    FROM zones 
-    WHERE "Zone" = 'East Harlem North'
-    LIMIT 1
-  )
-GROUP BY dropoff_zone
-ORDER BY total_tip DESC
-LIMIT 1;
+---
+
+## Data Preparation (Questions 3–6)
+
+The following datasets were used:
+
+- Green Taxi Trips – November 2025 (Parquet)
+- Taxi Zone Lookup Table (CSV)
+
+The data was loaded into PostgreSQL and queried using SQL.  
+All SQL queries are stored separately in the `sql/` directory.
+
+---
+
+## Question 3 – Counting Short Trips
+
+**Task:**  
+Count the number of trips in November 2025 with a `trip_distance` less than or equal to 1 mile.
+
+📄 SQL file:  
+`sql/q3_short_trips.sql`
+
+---
+
+## Question 4 – Longest Trip Day
+
+**Task:**  
+Identify the pickup day with the longest single trip distance in November 2025, excluding trips longer than 100 miles.
+
+📄 SQL file:  
+`sql/q4_longest_trip.sql`
+
+---
+
+## Question 5 – Biggest Pickup Zone
+
+**Task:**  
+Find the pickup zone with the highest total `total_amount` on **November 18, 2025**.
+
+📄 SQL file:  
+`sql/q5_biggest_pickup_zone.sql`
+
+---
+
+## Question 6 – Largest Tip
+
+**Task:**  
+For passengers picked up in **East Harlem North** during November 2025, determine which drop-off zone received the **largest total tip amount**.
+
+📄 SQL file:  
+`sql/q6_largest_tip.sql`
+
+> Note: This query aggregates tips by drop-off zone to identify where the highest total tip was recorded.
+
+---
+
+## Question 7 – Terraform Workflow
+
+**Correct workflow:**
+
+```text
+terraform init
+terraform apply -auto-approve
+terraform destroy
