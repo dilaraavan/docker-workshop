@@ -1,5 +1,5 @@
 # Module 1 Homework – Docker & SQL  
-Data Engineering Zoomcamp
+Data Engineering Zoomcamp by DataTalksClub
 
 This repository contains my solutions for **Module 1 (Docker & SQL)** of the Data Engineering Zoomcamp.  
 The focus of this module is understanding Docker basics, Docker Compose networking, and querying data loaded into PostgreSQL.
